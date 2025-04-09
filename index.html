@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garagem Inteligente - Interface Unificada</title>
+    <link rel="stylesheet" href="style.css"> <!-- Make sure style.css exists -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Basic Styling for the container */
+        #detalhes-veiculo-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        /* Hide sections by default - JS will manage visibility */
+        #detalhes-veiculo-container > section {
+             display: none; /* Hide sections inside container initially */
+             margin-bottom: 20px; /* Add space between sections when visible */
+        }
+        /* Style for the modify button */
+         #btnMostrarModificarForm {
+             margin-top: 10px;
+             background-color: #ffc107; /* Yellow */
+             color: #333;
+         }
+         .lista-manutencao {
+             max-height: 200px;
+             overflow-y: auto;
+             border: 1px solid #eee;
+             padding: 5px;
+             background-color: #fff;
+         }
+         .lista-manutencao p {
+            margin: 5px 0;
+            font-size: 0.9em;
+         }
+         .tipo-servico { font-weight: bold; }
+         .custo-servico { color: green; }
+
+         /* --- NEW STYLES --- */
+         .fuel-display { margin-top: 5px; font-size: 0.9em; }
+         .fuel-bar-container {
+             height: 10px;
+             background-color: #e0e0e0;
+             border-radius: 5px;
+             overflow: hidden;
+             margin-top: 2px;
+             width: 100px; /* Or adjust width */
+             display: inline-block; /* Or block */
+             vertical-align: middle;
+         }
+         .fuel-bar {
+             height: 100%;
+             background-color: #4CAF50; /* Green */
+             width: 0%; /* Initial width */
+             transition: width 0.3s ease-in-out;
+         }
+         .nickname-display { font-style: italic; color: #555; margin-left: 10px; }
+        /* Add other styles as needed in style.css */
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Garagem Inteligente</h1>
+    </header>
+
+    <main>
+        <section id="selecao-veiculo">
+            <h2>1. Selecione o Tipo de Veículo</h2>
+            <button data-tipo="carro">Carro</button>
+            <button data-tipo="esportivo">Carro Esportivo</button>
+            <button data-tipo="caminhao">Caminhão</button>
+            <button data-tipo="aviao">Avião</button>
+            <button data-tipo="moto">Moto</button>
+            <button data-tipo="bicicleta">Bicicleta</button>
+            <div id="tipoSelecionadoInfo" style="margin-top: 5px; font-style: italic;">Nenhum tipo selecionado.</div>
+        </section>
+
+        <!-- NEW: Container for all vehicle-specific details/actions -->
+        <div id="detalhes-veiculo-container" style="display: none;"> <!-- Initially hidden -->
+
+            <section id="criar-veiculo">
+                <!-- Title changes dynamically -->
+                <h2 id="criarModificarTitulo">Criar Novo Veículo</h2>
+                <label for="modelo">Modelo:</label>
+                <input type="text" id="modelo" required><br> <!-- Added required -->
+                <label for="cor">Cor:</label>
+                <input type="text" id="cor" required><br> <!-- Added required -->
+                <!-- NEW: Nickname Input -->
+                <label for="nickname">Apelido (Opcional):</label>
+                <input type="text" id="nickname"><br>
+                <!-- END NEW -->
+                <label for="imagem">Imagem:</label>
+                <input type="file" id="imagem" accept="image/*"><br>
+                <!-- Specific Fields (visibility handled by JS) -->
+                <label for="capacidadeCarga" id="labelCapacidadeCarga" style="display: none;">Capacidade de Carga:</label>
+                <input type="number" id="capacidadeCarga" style="display: none;"><br>
+                <label for="envergadura" id="labelEnvergadura" style="display: none;">Envergadura (metros):</label>
+                <input type="number" id="envergadura" style="display: none;"><br>
+                <label for="tipoBicicleta" id="labelTipoBicicleta" style="display: none;">Tipo de Bicicleta:</label>
+                <select id="tipoBicicleta" style="display: none;">
+                    <option value="montanha">Montanha</option>
+                    <option value="estrada">Estrada</option>
+                    <option value="urbana">Urbana</option>
+                </select><br>
+                <!-- This button's text and behavior context changes -->
+                <button id="btnCriarVeiculo">Criar Veículo</button>
+                <button id="btnCancelarModificar" style="display: none;">Cancelar Modificação</button>
+            </section>
+
+            <section id="informacoes-veiculo">
+                <h2>Informações do Veículo <span id="nicknameDisplay" class="nickname-display"></span></h2> <!-- Nickname Display -->
+                <div id="informacoesVeiculo">Nenhum veículo selecionado.</div>
+                <img id="imagemExibida" src="" alt="Imagem do Veículo" style="display: none; max-width: 200px; margin-top: 10px;">
+                <div id="statusVeiculo" class="status-desligado">Desligado</div>
+                <div id="velocidadeDisplay">Velocidade: <span id="velocidadeValor">0</span></div>
+                <div class="barra-velocidade">
+                    <div class="progresso-velocidade" id="progressoVelocidade"></div>
+                </div>
+                <!-- NEW: Fuel Display -->
+                <div id="fuelDisplayContainer" class="fuel-display" style="display: none;">
+                    Combustível: <span id="fuelLevelValor">100</span>%
+                    <div class="fuel-bar-container">
+                        <div class="fuel-bar" id="fuelLevelBar"></div>
+                    </div>
+                </div>
+                <!-- END NEW -->
+                <div id="cargaAtualDisplay" style="display: none;">Carga Atual: <span id="cargaAtualValor">0</span></div>
+                <div id="altitudeDisplay" style="display: none;">Altitude: <span id="altitudeValor">0</span></div>
+                 <!-- New button to trigger modification form -->
+                 <button id="btnMostrarModificarForm" style="display: none;"><i class="fas fa-edit"></i> Modificar Detalhes</button>
+            </section>
+
+            <section id="acoes-veiculo">
+                <h2>Ações</h2>
+                <button data-acao="ligar"><i class="fas fa-power-off"></i> Ligar</button>
+                <button data-acao="desligar"><i class="fas fa-power-off"></i> Desligar</button>
+                <button data-acao="acelerar"><i class="fas fa-tachometer-alt"></i> Acelerar</button>
+                <button data-acao="frear"><i class="fas fa-car-crash"></i> Frear</button>
+                <button data-acao="buzinar"><i class="fas fa-bullhorn"></i> Buzinar</button>
+                <!-- NEW: Refuel Button -->
+                <button data-acao="reabastecer" id="btnReabastecer" style="display: none;"><i class="fas fa-gas-pump"></i> Reabastecer</button>
+                <!-- END NEW -->
+                <!-- Specific action buttons -->
+                <button data-acao="turbo" style="display: none;"><i class="fas fa-rocket"></i> Turbo</button>
+                <button data-acao="carregar" id="btnCarregar" style="display: none;"><i class="fas fa-truck-loading"></i> Carregar</button>
+                <button data-acao="descarregar" id="btnDescarregar" style="display: none;"><i class="fas fa-truck-loading"></i> Descarregar</button>
+                <button data-acao="decolar" id="btnDecolar" style="display: none;"><i class="fas fa-plane-departure"></i> Decolar</button>
+                <button data-acao="aterrissar" id="btnAterrissar" style="display: none;"><i class="fas fa-plane-arrival"></i> Aterrissar</button>
+            </section>
+
+            <section id="musica-veiculo">
+                <h2>Música do Veículo</h2>
+                <input type="file" id="musicaInput" accept="audio/*">
+                <button id="btnTocarMusica">Tocar Música</button>
+                <button id="btnPararMusica">Parar Música</button>
+                <div id="nomeMusica">Nenhuma música selecionada</div>
+            </section>
+
+            <section id="manutencao-veiculo">
+                <h2>Manutenção do Veículo</h2>
+                <!-- Histórico -->
+                <h3>Histórico de Manutenção</h3>
+                <div id="historicoManutencaoLista" class="lista-manutencao">Nenhum histórico registrado.</div>
+                <!-- Agendamentos Futuros -->
+                <h3>Agendamentos Futuros</h3>
+                <div id="agendamentosFuturosLista" class="lista-manutencao">Nenhum agendamento futuro.</div>
+                <!-- Agendamento Form -->
+                 <h3>Agendar/Registrar Nova Manutenção</h3>
+                <form id="formAgendarManutencao">
+                    <label for="manutencaoData">Data:</label>
+                    <input type="date" id="manutencaoData" required><br>
+                    <label for="manutencaoTipo">Tipo de Serviço:</label>
+                    <input type="text" id="manutencaoTipo" placeholder="Ex: Troca de óleo" required><br>
+                    <label for="manutencaoCusto">Custo (R$):</label>
+                    <input type="number" id="manutencaoCusto" step="0.01" min="0" required><br>
+                    <label for="manutencaoDescricao">Descrição (Opcional):</label>
+                    <textarea id="manutencaoDescricao" rows="3"></textarea><br>
+                    <button type="submit">Agendar/Registrar</button>
+                </form>
+            </section>
+
+        </div> <!-- Fim de #detalhes-veiculo-container -->
+
+        <!-- Global Settings Section -->
+        <section id="configuracao-som">
+             <h2>Configurações Globais de Som</h2>
+             <label for="volumeGeral">Volume Geral:</label>
+             <input type="range" id="volumeGeral" min="0" max="1" step="0.1" value="0.5">
+         </section>
+
+    </main>
+
+    <footer>
+        <p>© 2024 Garagem Inteligente. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="script.js"></script> <!-- Your refactored script -->
+</body>
+
+</html>
